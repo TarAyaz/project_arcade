@@ -1,6 +1,5 @@
 import arcade
-import os
-
+import random
 
 TITLE = "Tetris"
 SCREEN_WIDTH = 800
@@ -10,23 +9,57 @@ GRID_WIDTH = 10
 GRID_HEIGHT = 20
 SIDEBAR_WIDTH = 200
 
+COLORS = [
+    (0, 255, 255),
+    (255, 255, 0),
+    (255, 0, 255),
+    (0, 255, 0),
+    (255, 0, 0),
+    (0, 0, 255),
+    (255, 165, 0),
+]
+
+SHAPES = [
+    [[1, 1, 1, 1]],
+    [[1, 1], [1, 1]],
+    [[0, 1, 0], [1, 1, 1]],
+    [[0, 1, 1], [1, 1, 0]],
+    [[1, 1, 0], [0, 1, 1]],
+    [[1, 0, 0], [1, 1, 1]],
+    [[0, 0, 1], [1, 1, 1]],
+]
+
 PLAYFIELD_WIDTH = GRID_WIDTH * GRID_SIZE
 PLAYFIELD_HEIGHT = GRID_HEIGHT * GRID_SIZE
 PLAYFIELD_X = (SCREEN_WIDTH - SIDEBAR_WIDTH - PLAYFIELD_WIDTH) // 2 + 126
 PLAYFIELD_Y = (SCREEN_HEIGHT - PLAYFIELD_HEIGHT) // 2 + 45
 
 
+class Tetromino:
+    def __init__(self):
+        self.shape_idx = random.randint(0, len(SHAPES) - 1)
+        self.shape = SHAPES[self.shape_idx]
+        self.x = GRID_WIDTH // 2 - len(self.shape[0]) // 2
+        self.y = 0
+
+    def rotate(self):
+        rows = len(self.shape)
+        cols = len(self.shape[0])
+        return [[self.shape[rows - 1 - j][i] for j in range(rows)] for i in range(cols)]
+
+
 class TetrisGame(arcade.Window):
     def __init__(self, SCREEN_WIDTH, SCREEN_HEIGHT, TITLE):
         super().__init__(SCREEN_WIDTH, SCREEN_HEIGHT, TITLE)
         self.background_sprites = arcade.SpriteList()
-        self.bg_path = "../images/tetris/game_fon/0.png"
+        self.bg_path = "images/tetris/game_fon/0.png"
         self.bg_sprite = arcade.Sprite(self.bg_path)
         self.bg_sprite.center_x = SCREEN_WIDTH // 2
         self.bg_sprite.center_y = SCREEN_HEIGHT // 2
         self.bg_sprite.width = SCREEN_WIDTH
         self.bg_sprite.height = SCREEN_HEIGHT
         self.background_sprites.append(self.bg_sprite)
+        self.reset()
 
         self.grid = [[0 for _ in range(GRID_WIDTH)] for _ in range(GRID_HEIGHT)]
 
@@ -38,9 +71,77 @@ class TetrisGame(arcade.Window):
             for x in range(GRID_WIDTH):
                 pass
 
+    def reset(self):
+        self.grid = [[0 for _ in range(GRID_WIDTH)] for _ in range(GRID_HEIGHT)]
+        self.current_piece = Tetromino()
+        self.next_piece = Tetromino()
+        self.game_over = False
+        self.fall_speed = 0.5
+        self.fall_timer = 0.0
+        self.paused = False
+
+    def valid_position(self, shape, x, y):
+        for r, row in enumerate(shape):
+            for c, cell in enumerate(row):
+                if cell:
+                    px, py = x + c, y + r
+                    if px < 0 or px >= GRID_WIDTH or py >= GRID_HEIGHT:
+                        return False
+                    if py >= 0 and self.grid[py][px] != 0:
+                        return False
+        return True
+
+    def move(self, dx, dy):
+        if self.game_over or self.paused:
+            return False
+        nx, ny = self.current_piece.x + dx, self.current_piece.y + dy
+        if self.valid_position(self.current_piece.shape, nx, ny):
+            self.current_piece.x, self.current_piece.y = nx, ny
+            return True
+        return False
+
+    def rotate_piece(self):
+        if self.game_over or self.paused:
+            return False
+        rotated = self.current_piece.rotate()
+        if self.valid_position(rotated, self.current_piece.x, self.current_piece.y):
+            self.current_piece.shape = rotated
+            return True
+        return False
+
+    def on_update(self, delta_time):
+        if self.paused or self.game_over:
+            return
+        self.fall_timer += delta_time
+        if self.fall_timer >= self.fall_speed:
+            self.fall_timer = 0
+            if not self.move(0, 1):
+                self.current_piece = self.next_piece
+                self.next_piece = Tetromino()
+                if not self.valid_position(
+                    self.current_piece.shape, self.current_piece.x, self.current_piece.y
+                ):
+                    self.game_over = True
+
+    def on_key_press(self, key, modifiers):
+        if key == arcade.key.R and self.game_over:
+            self.reset()
+        elif key == arcade.key.P:
+            self.paused = not self.paused
+        elif not self.paused and not self.game_over:
+            if key == arcade.key.W:
+                self.rotate_piece()
+            elif key == arcade.key.A:
+                self.move(-1, 0)
+            elif key == arcade.key.D:
+                self.move(1, 0)
+            elif key == arcade.key.SPACE:
+                while self.move(0, 1):
+                    pass
+
 
 def main():
-    game = TetrisGame()
+    game = TetrisGame(SCREEN_WIDTH, SCREEN_HEIGHT, TITLE)
     arcade.run()
 
 
