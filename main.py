@@ -1,4 +1,5 @@
 import arcade
+import os
 
 
 TITLE = "Tetris"
@@ -18,21 +19,20 @@ PLAYFIELD_Y = (SCREEN_HEIGHT - PLAYFIELD_HEIGHT) // 2 + 45
 class TetrisGame(arcade.Window):
     def __init__(self, SCREEN_WIDTH, SCREEN_HEIGHT, TITLE):
         super().__init__(SCREEN_WIDTH, SCREEN_HEIGHT, TITLE)
-        arcade.set_background_color(arcade.color.BLACK)
+        self.background_sprites = arcade.SpriteList()
         self.bg_path = "../images/tetris/game_fon/0.png"
-        self.background_color = arcade.load_texture(self.bg_path)
+        self.bg_sprite = arcade.Sprite(self.bg_path)
+        self.bg_sprite.center_x = SCREEN_WIDTH // 2
+        self.bg_sprite.center_y = SCREEN_HEIGHT // 2
+        self.bg_sprite.width = SCREEN_WIDTH
+        self.bg_sprite.height = SCREEN_HEIGHT
+        self.background_sprites.append(self.bg_sprite)
 
         self.grid = [[0 for _ in range(GRID_WIDTH)] for _ in range(GRID_HEIGHT)]
 
     def on_draw(self):
         self.clear()
-        arcade.draw_texture_rectangle(
-            SCREEN_WIDTH // 2,
-            SCREEN_HEIGHT // 2,
-            SCREEN_WIDTH,
-            SCREEN_HEIGHT,
-            self.background,
-        )
+        self.background_sprites.draw()
 
         for y in range(GRID_HEIGHT):
             for x in range(GRID_WIDTH):
