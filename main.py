@@ -79,6 +79,9 @@ class TetrisGame(arcade.Window):
         self.fall_speed = 0.5
         self.fall_timer = 0.0
         self.paused = False
+        self.score = 0
+        self.level = 1
+        self.lines_cleared = 0
 
     def valid_position(self, shape, x, y):
         for r, row in enumerate(shape):
@@ -116,12 +119,9 @@ class TetrisGame(arcade.Window):
         if self.fall_timer >= self.fall_speed:
             self.fall_timer = 0
             if not self.move(0, 1):
-                self.current_piece = self.next_piece
-                self.next_piece = Tetromino()
-                if not self.valid_position(
-                    self.current_piece.shape, self.current_piece.x, self.current_piece.y
-                ):
-                    self.game_over = True
+                self.merge_piece()
+                self.clear_lines()
+                self.new_piece()
 
     def on_key_press(self, key, modifiers):
         if key == arcade.key.R and self.game_over:
@@ -138,6 +138,24 @@ class TetrisGame(arcade.Window):
             elif key == arcade.key.SPACE:
                 while self.move(0, 1):
                     pass
+
+    def merge_piece(self):
+        for r, row in enumerate(self.current_piece.shape):
+            for c, cell in enumerate(row):
+                if cell:
+                    gy = self.current_piece.y + r
+                    if gy >= 0:
+                        self.grid[gy][self.current_piece.x + c] = (
+                            self.current_piece.shape_idx + 1
+                        )
+
+    def new_piece(self):
+        self.current_piece = self.next_piece
+        self.next_piece = Tetromino()
+        if not self.valid_position(
+            self.current_piece.shape, self.current_piece.x, self.current_piece.y
+        ):
+            self.game_over = True
 
 
 def main():
