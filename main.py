@@ -72,6 +72,14 @@ class TetrisGame(arcade.Window):
                 self.block_textures.append(color_img)
 
         self.next_piece_sprites = arcade.SpriteList()
+
+        font_path = "images/tetris/fonts/PressStart2P-Regular.ttf"
+        if os.path.exists(font_path):
+            arcade.load_font(font_path)
+            self.font_name = "Press Start 2P"
+        else:
+            self.font_name = "Arial"
+
         self.reset()
 
         # self.grid = [[0 for _ in range(GRID_WIDTH)] for _ in range(GRID_HEIGHT)]
@@ -89,6 +97,7 @@ class TetrisGame(arcade.Window):
             PLAYFIELD_Y + PLAYFIELD_HEIGHT - 60,
             arcade.color.WHITE,
             16,
+            font_name=self.font_name,
             anchor_x="left",
         )
         arcade.draw_text(
@@ -97,6 +106,7 @@ class TetrisGame(arcade.Window):
             SCREEN_HEIGHT - 40,
             arcade.color.WHITE,
             14,
+            font_name=self.font_name,
         )
         arcade.draw_text(
             f"{self.score:06d}",
@@ -104,6 +114,7 @@ class TetrisGame(arcade.Window):
             SCREEN_HEIGHT - 60,
             arcade.color.WHITE,
             14,
+            font_name=self.font_name,
         )
         arcade.draw_text(
             "Level:",
@@ -111,6 +122,7 @@ class TetrisGame(arcade.Window):
             SCREEN_HEIGHT - 160,
             arcade.color.WHITE,
             14,
+            font_name=self.font_name,
         )
         arcade.draw_text(
             f"{self.level:02d}",
@@ -118,6 +130,7 @@ class TetrisGame(arcade.Window):
             SCREEN_HEIGHT - 185,
             arcade.color.WHITE,
             14,
+            font_name=self.font_name,
         )
         arcade.draw_text(
             "Lines:",
@@ -125,6 +138,7 @@ class TetrisGame(arcade.Window):
             SCREEN_HEIGHT - 100,
             arcade.color.WHITE,
             14,
+            font_name=self.font_name,
         )
         arcade.draw_text(
             f"{self.lines:03d}",
@@ -132,6 +146,7 @@ class TetrisGame(arcade.Window):
             SCREEN_HEIGHT - 125,
             arcade.color.WHITE,
             14,
+            font_name=self.font_name,
         )
 
         if self.game_over:
@@ -148,6 +163,7 @@ class TetrisGame(arcade.Window):
                 SCREEN_HEIGHT // 2 + 60,
                 arcade.color.WHITE,
                 24,
+                font_name=self.font_name,
                 anchor_x="center",
             )
             arcade.draw_text(
@@ -156,12 +172,20 @@ class TetrisGame(arcade.Window):
                 SCREEN_HEIGHT // 2 + 20,
                 arcade.color.WHITE,
                 16,
+                font_name=self.font_name,
                 anchor_x="center",
             )
 
             stats_x = PLAYFIELD_X - 180
             stats_y = PLAYFIELD_Y + GRID_HEIGHT * GRID_SIZE - 30
-            arcade.draw_text("Piece Stats", stats_x, stats_y, arcade.color.WHITE, 12)
+            arcade.draw_text(
+                "Piece Stats",
+                stats_x,
+                stats_y,
+                arcade.color.WHITE,
+                12,
+                font_name=self.font_name,
+            )
 
             stats_sprites = arcade.SpriteList()
             mini_size = 12
