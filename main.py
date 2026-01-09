@@ -91,6 +91,109 @@ class TetrisGame(arcade.Window):
             16,
             anchor_x="left",
         )
+        arcade.draw_text(
+            "Score:",
+            PLAYFIELD_X + PLAYFIELD_WIDTH + 30,
+            SCREEN_HEIGHT - 40,
+            arcade.color.WHITE,
+            14,
+        )
+        arcade.draw_text(
+            f"{self.score:06d}",
+            PLAYFIELD_X + PLAYFIELD_WIDTH + 30,
+            SCREEN_HEIGHT - 60,
+            arcade.color.WHITE,
+            14,
+        )
+        arcade.draw_text(
+            "Level:",
+            PLAYFIELD_X + PLAYFIELD_WIDTH + 30,
+            SCREEN_HEIGHT - 160,
+            arcade.color.WHITE,
+            14,
+        )
+        arcade.draw_text(
+            f"{self.level:02d}",
+            PLAYFIELD_X + PLAYFIELD_WIDTH + 30,
+            SCREEN_HEIGHT - 185,
+            arcade.color.WHITE,
+            14,
+        )
+        arcade.draw_text(
+            "Lines:",
+            PLAYFIELD_X + PLAYFIELD_WIDTH + 30,
+            SCREEN_HEIGHT - 100,
+            arcade.color.WHITE,
+            14,
+        )
+        arcade.draw_text(
+            f"{self.lines:03d}",
+            PLAYFIELD_X + PLAYFIELD_WIDTH + 30,
+            SCREEN_HEIGHT - 125,
+            arcade.color.WHITE,
+            14,
+        )
+
+        if self.game_over:
+            arcade.draw_rectangle_filled(
+                SCREEN_WIDTH // 2,
+                SCREEN_HEIGHT // 2,
+                SCREEN_WIDTH,
+                SCREEN_HEIGHT,
+                (0, 0, 0, 200),
+            )
+            arcade.draw_text(
+                "GAME OVER",
+                SCREEN_WIDTH // 2,
+                SCREEN_HEIGHT // 2 + 60,
+                arcade.color.WHITE,
+                24,
+                anchor_x="center",
+            )
+            arcade.draw_text(
+                "Press R to Restart",
+                SCREEN_WIDTH // 2,
+                SCREEN_HEIGHT // 2 + 20,
+                arcade.color.WHITE,
+                16,
+                anchor_x="center",
+            )
+
+            stats_x = PLAYFIELD_X - 180
+            stats_y = PLAYFIELD_Y + GRID_HEIGHT * GRID_SIZE - 30
+            arcade.draw_text("Piece Stats", stats_x, stats_y, arcade.color.WHITE, 12)
+
+            stats_sprites = arcade.SpriteList()
+            mini_size = 12
+            for i in range(7):
+                shape = SHAPES[i]
+                h, w = len(shape), len(shape[0])
+                off_x = (4 - w) * mini_size // 2
+                off_y = (4 - h) * mini_size // 2
+                base_y = stats_y - 30 - i * 40
+
+                for r, row in enumerate(shape):
+                    for c, cell in enumerate(row):
+                        if cell:
+                            px = stats_x + 20 + off_x + c * mini_size
+                            py = base_y + off_y + r * mini_size
+                            sprite = arcade.Sprite()
+                            sprite.texture = self.block_textures[i]
+                            sprite.center_x = px + mini_size // 2
+                            sprite.center_y = py + mini_size // 2
+                            sprite.width = mini_size
+                            sprite.height = mini_size
+                            stats_sprites.append(sprite)
+
+                arcade.draw_text(
+                    f"x{self.piece_count[i]}",
+                    stats_x + 20 + 4 * mini_size + 5,
+                    base_y + 10,
+                    arcade.color.WHITE,
+                    10,
+                )
+
+            stats_sprites.draw()
         # for y in range(GRID_HEIGHT):
         #     for x in range(GRID_WIDTH):
         #         pass
@@ -130,7 +233,9 @@ class TetrisGame(arcade.Window):
         self.score = 0
         self.level = 1
         self.lines_cleared = 0
+        self.piece_count = [0] * 7
         self.block_sprites = arcade.SpriteList()
+        self._update_next_piece_display()
 
     def valid_position(self, shape, x, y):
         for r, row in enumerate(shape):
@@ -205,6 +310,7 @@ class TetrisGame(arcade.Window):
     def new_piece(self):
         self.current_piece = self.next_piece
         self.next_piece = Tetromino()
+        self.piece_count[self.current_piece.shape_idx] += 1
         if not self.valid_position(
             self.current_piece.shape, self.current_piece.x, self.current_piece.y
         ):
@@ -244,6 +350,18 @@ class TetrisGame(arcade.Window):
         sprite.width = GRID_SIZE
         sprite.height = GRID_SIZE
         self.block_sprites.append(sprite)
+
+    def clear_lines(self):
+        lines_to_clear = [y for y in range(GRID_HEIGHT) if all(self.grid[y])]
+        for y in lines_to_clear:
+            del self.grid[y]
+            self.grid.insert(0, [0] * GRID_WIDTH)
+
+        if lines_to_clear:
+            clear = len(lines_to_clear)
+            self.score += [100, 300, 500, 800][min(clear - 1, 3)] * self.level
+            self.level = self.lines_cleared // 10 + 1
+            self.fall_speed = max(0.05, 0.5 - (self.level - 1) * 0.05)
 
 
 def main():
