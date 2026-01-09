@@ -235,6 +235,8 @@ class TetrisGame(arcade.Window):
         self.lines_cleared = 0
         self.piece_count = [0] * 7
         self.block_sprites = arcade.SpriteList()
+        self.horizontal_delay = 0.1
+        self.last_horizontal_time = 0.0
         self._update_next_piece_display()
 
     def valid_position(self, shape, x, y):
@@ -270,6 +272,21 @@ class TetrisGame(arcade.Window):
         if self.paused or self.game_over:
             self._rebuild_block_sprites()
             return
+
+        current_time = arcade.get_time()
+        keys = arcade.get_pressed_keys()
+
+        if arcade.key.A in keys:
+            if current_time - self.last_horizontal_time >= self.horizontal_delay:
+                self.move(-1, 0)
+                self.last_horizontal_time = current_time
+        elif arcade.key.D in keys:
+            if current_time - self.last_horizontal_time >= self.horizontal_delay:
+                self.move(1, 0)
+                self.last_horizontal_time = current_time
+        else:
+            self.last_horizontal_time = current_time
+
         self.fall_timer += delta_time
         if self.fall_timer >= self.fall_speed:
             self.fall_timer = 0
@@ -289,10 +306,6 @@ class TetrisGame(arcade.Window):
         elif not self.paused and not self.game_over:
             if key == arcade.key.W:
                 self.rotate_piece()
-            elif key == arcade.key.A:
-                self.move(-1, 0)
-            elif key == arcade.key.D:
-                self.move(1, 0)
             elif key == arcade.key.SPACE:
                 while self.move(0, 1):
                     pass
