@@ -89,7 +89,7 @@ class TetrisGame(arcade.Window):
         self.background_sprites.draw()
 
         self.block_sprites.draw()
-        self._update_next_piece_display()
+        self.next_piece_sprites.draw()
 
         arcade.draw_text(
             "NEXT",
@@ -141,7 +141,7 @@ class TetrisGame(arcade.Window):
             font_name=self.font_name,
         )
         arcade.draw_text(
-            f"{self.lines:03d}",
+            f"{self.lines_cleared:03d}",
             PLAYFIELD_X + PLAYFIELD_WIDTH + 30,
             SCREEN_HEIGHT - 125,
             arcade.color.WHITE,
@@ -215,6 +215,7 @@ class TetrisGame(arcade.Window):
                     base_y + 10,
                     arcade.color.WHITE,
                     10,
+                    font_name=self.font_name,
                 )
 
             stats_sprites.draw()
@@ -223,7 +224,7 @@ class TetrisGame(arcade.Window):
         #         pass
 
     def _update_next_piece_display(self):
-        self.next_sprite_block.clear()
+        self.next_piece_sprites.clear()
         shape = self.next_piece.shape
 
         offset_x = (4 - len(shape[0])) // 2
@@ -235,7 +236,7 @@ class TetrisGame(arcade.Window):
             for c, cell in enumerate(row):
                 if cell:
                     x = base_x + (offset_x + c) * GRID_SIZE
-                    y = base_y + (offset_y + r) * GRID_SIZE
+                    y = base_y - (offset_y + r) * GRID_SIZE
                     center_x = x + GRID_SIZE // 2
                     center_y = y + GRID_SIZE // 2
                     sprite = arcade.Sprite()
@@ -244,7 +245,7 @@ class TetrisGame(arcade.Window):
                     sprite.center_y = center_y
                     sprite.width = GRID_SIZE
                     sprite.height = GRID_SIZE
-                    self.next_sprite_block.append(sprite)
+                    self.next_piece_sprites.append(sprite)
 
     def reset(self):
         self.grid = [[0 for _ in range(GRID_WIDTH)] for _ in range(GRID_HEIGHT)]
@@ -368,8 +369,8 @@ class TetrisGame(arcade.Window):
             for r, row in enumerate(self.current_piece.shape):
                 for c, cell in enumerate(row):
                     if cell:
-                        x = (self.current_piece.x + c,)
-                        y = (self.current_piece.y + r,)
+                        x = self.current_piece.x + c
+                        y = self.current_piece.y + r
                         if y >= 0:
                             self._add_block_to_sprite_list(
                                 x, y, self.current_piece.shape_idx
@@ -378,8 +379,8 @@ class TetrisGame(arcade.Window):
     def _add_block_to_sprite_list(self, x, y, shape_idx):
         if not 0 <= x < GRID_WIDTH:
             return
-        center_x = PLAYFIELD_X + x * GRID_SIZE + GRID_SIZE / 2
-        center_y = PLAYFIELD_Y + y * GRID_SIZE + GRID_SIZE / 2
+        center_x = PLAYFIELD_X + x * GRID_SIZE + GRID_SIZE // 2
+        center_y = PLAYFIELD_Y + y * GRID_SIZE + GRID_SIZE // 2
         sprite = arcade.Sprite()
         sprite.texture = self.block_textures[shape_idx]
         sprite.center_x = center_x
@@ -396,6 +397,7 @@ class TetrisGame(arcade.Window):
 
         if lines_to_clear:
             clear = len(lines_to_clear)
+            self.lines_cleared += clear
             self.score += [100, 300, 500, 800][min(clear - 1, 3)] * self.level
             self.level = self.lines_cleared // 10 + 1
             self.fall_speed = max(0.05, 0.5 - (self.level - 1) * 0.05)
