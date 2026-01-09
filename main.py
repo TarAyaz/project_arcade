@@ -1,4 +1,5 @@
 import arcade
+import os
 import random
 
 TITLE = "Tetris"
@@ -59,17 +60,28 @@ class TetrisGame(arcade.Window):
         self.bg_sprite.width = SCREEN_WIDTH
         self.bg_sprite.height = SCREEN_HEIGHT
         self.background_sprites.append(self.bg_sprite)
+        self.block_textures = []
+        for i in range(7):
+            path = f"images/tetris/blocks/{i}.png"
+            if os.path.exists(path):
+                self.block_textures.append(arcade.load_texture(path))
+            else:
+                color_img = arcade.Texture.create_filled(
+                    name=f"color_block_{i}", size=(1, 1), color=COLORS[i]
+                )
+                self.block_textures.append(color_img)
         self.reset()
 
-        self.grid = [[0 for _ in range(GRID_WIDTH)] for _ in range(GRID_HEIGHT)]
+        # self.grid = [[0 for _ in range(GRID_WIDTH)] for _ in range(GRID_HEIGHT)]
 
     def on_draw(self):
         self.clear()
         self.background_sprites.draw()
 
-        for y in range(GRID_HEIGHT):
-            for x in range(GRID_WIDTH):
-                pass
+        self.block_sprites.draw()
+        # for y in range(GRID_HEIGHT):
+        #     for x in range(GRID_WIDTH):
+        #         pass
 
     def reset(self):
         self.grid = [[0 for _ in range(GRID_WIDTH)] for _ in range(GRID_HEIGHT)]
@@ -82,6 +94,7 @@ class TetrisGame(arcade.Window):
         self.score = 0
         self.level = 1
         self.lines_cleared = 0
+        self.block_sprites = arcade.SpriteList()
 
     def valid_position(self, shape, x, y):
         for r, row in enumerate(shape):
@@ -114,6 +127,7 @@ class TetrisGame(arcade.Window):
 
     def on_update(self, delta_time):
         if self.paused or self.game_over:
+            self._rebuild_block_sprites()
             return
         self.fall_timer += delta_time
         if self.fall_timer >= self.fall_speed:
@@ -122,6 +136,7 @@ class TetrisGame(arcade.Window):
                 self.merge_piece()
                 self.clear_lines()
                 self.new_piece()
+        self._rebuild_block_sprites()
 
     def on_key_press(self, key, modifiers):
         if key == arcade.key.R and self.game_over:
@@ -156,6 +171,39 @@ class TetrisGame(arcade.Window):
             self.current_piece.shape, self.current_piece.x, self.current_piece.y
         ):
             self.game_over = True
+
+    def _rebuild_block_sprites(self):
+        self.block_sprites.clear()
+        for y in range(GRID_HEIGHT):
+            for x in range(GRID_WIDTH):
+                cell_value = self.grid[y][x]
+                if cell_value:
+                    shape_idx = cell_value - 1
+                    self._add_block_to_sprite_list(x, y, shape_idx)
+
+        if not self.game_over:
+            for r, row in enumerate(self.current_piece.shape):
+                for c, cell in enumerate(row):
+                    if cell:
+                        x = (self.current_piece.x + c,)
+                        y = (self.current_piece.y + r,)
+                        if y >= 0:
+                            self._add_block_to_sprite_list(
+                                x, y, self.current_piece.shape_idx
+                            )
+
+    def _add_block_to_sprite_list(self, x, y, shape_idx):
+        if not 0 <= x < GRID_WIDTH:
+            return
+        center_x = PLAYFIELD_X + x * GRID_SIZE + GRID_SIZE / 2
+        center_y = PLAYFIELD_Y + y * GRID_SIZE + GRID_SIZE / 2
+        sprite = arcade.Sprite()
+        sprite.texture = self.block_textures[shape_idx]
+        sprite.center_x = center_x
+        sprite.center_y = center_y
+        sprite.width = GRID_SIZE
+        sprite.height = GRID_SIZE
+        self.block_sprites.append(sprite)
 
 
 def main():
