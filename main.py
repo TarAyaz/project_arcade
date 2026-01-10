@@ -1,5 +1,6 @@
 import arcade
 import os
+import time
 import random
 
 TITLE = "Tetris"
@@ -32,8 +33,8 @@ SHAPES = [
 
 PLAYFIELD_WIDTH = GRID_WIDTH * GRID_SIZE
 PLAYFIELD_HEIGHT = GRID_HEIGHT * GRID_SIZE
-PLAYFIELD_X = (SCREEN_WIDTH - SIDEBAR_WIDTH - PLAYFIELD_WIDTH) // 2 + 126
-PLAYFIELD_Y = (SCREEN_HEIGHT - PLAYFIELD_HEIGHT) // 2 + 45
+PLAYFIELD_X = (SCREEN_WIDTH - SIDEBAR_WIDTH - PLAYFIELD_WIDTH) // 2 + 125
+PLAYFIELD_Y = (SCREEN_HEIGHT - PLAYFIELD_HEIGHT) // 2 - 46
 
 
 class Tetromino:
@@ -79,7 +80,8 @@ class TetrisGame(arcade.Window):
             self.font_name = "Press Start 2P"
         else:
             self.font_name = "Arial"
-
+        self.preset_key = set()
+        self.max_score = 0
         self.reset()
 
         # self.grid = [[0 for _ in range(GRID_WIDTH)] for _ in range(GRID_HEIGHT)]
@@ -87,14 +89,17 @@ class TetrisGame(arcade.Window):
     def on_draw(self):
         self.clear()
         self.background_sprites.draw()
+        # arcade.draw_line(PLAYFIELD_X, 0, PLAYFIELD_X, SCREEN_HEIGHT, arcade.color.RED, 4)
+        # arcade.draw_line(PLAYFIELD_X, PLAYFIELD_Y, PLAYFIELD_X + PLAYFIELD_WIDTH, PLAYFIELD_Y, arcade.color.RED, 4)
+        # arcade.draw_line(PLAYFIELD_X, PLAYFIELD_Y + PLAYFIELD_HEIGHT, PLAYFIELD_X + PLAYFIELD_WIDTH, PLAYFIELD_Y + PLAYFIELD_HEIGHT, arcade.color.RED, 4)
 
         self.block_sprites.draw()
         self.next_piece_sprites.draw()
 
         arcade.draw_text(
             "NEXT",
-            PLAYFIELD_X + PLAYFIELD_WIDTH + 40,
-            PLAYFIELD_Y + PLAYFIELD_HEIGHT - 60,
+            PLAYFIELD_X + PLAYFIELD_WIDTH + 71,
+            PLAYFIELD_Y + PLAYFIELD_HEIGHT // 2 + 60,
             arcade.color.WHITE,
             16,
             font_name=self.font_name,
@@ -102,57 +107,74 @@ class TetrisGame(arcade.Window):
         )
         arcade.draw_text(
             "Score:",
-            PLAYFIELD_X + PLAYFIELD_WIDTH + 30,
-            SCREEN_HEIGHT - 40,
+            SCREEN_WIDTH - 190,
+            SCREEN_HEIGHT - 50,
             arcade.color.WHITE,
             14,
             font_name=self.font_name,
         )
         arcade.draw_text(
             f"{self.score:06d}",
-            PLAYFIELD_X + PLAYFIELD_WIDTH + 30,
-            SCREEN_HEIGHT - 60,
+            SCREEN_WIDTH - 190,
+            SCREEN_HEIGHT - 90,
+            arcade.color.WHITE,
+            14,
+            font_name=self.font_name,
+        )
+        arcade.draw_text(
+            "Record:",
+            SCREEN_WIDTH - 190,
+            SCREEN_HEIGHT - 130,
+            arcade.color.WHITE,
+            14,
+            font_name=self.font_name,
+        )
+        arcade.draw_text(
+            f"{self.max_score:06d}",
+            SCREEN_WIDTH - 190,
+            SCREEN_HEIGHT - 170,
             arcade.color.WHITE,
             14,
             font_name=self.font_name,
         )
         arcade.draw_text(
             "Level:",
-            PLAYFIELD_X + PLAYFIELD_WIDTH + 30,
-            SCREEN_HEIGHT - 160,
+            SCREEN_WIDTH - 190,
+            160,
             arcade.color.WHITE,
             14,
             font_name=self.font_name,
         )
         arcade.draw_text(
-            f"{self.level:02d}",
-            PLAYFIELD_X + PLAYFIELD_WIDTH + 30,
-            SCREEN_HEIGHT - 185,
+            f"{self.level:06d}",
+            SCREEN_WIDTH - 190,
+            125,
             arcade.color.WHITE,
             14,
             font_name=self.font_name,
         )
         arcade.draw_text(
             "Lines:",
-            PLAYFIELD_X + PLAYFIELD_WIDTH + 30,
-            SCREEN_HEIGHT - 100,
+            SCREEN_WIDTH // 2 - 100,
+            SCREEN_HEIGHT - 50,
             arcade.color.WHITE,
             14,
             font_name=self.font_name,
         )
         arcade.draw_text(
-            f"{self.lines_cleared:03d}",
-            PLAYFIELD_X + PLAYFIELD_WIDTH + 30,
-            SCREEN_HEIGHT - 125,
+            f"{self.lines_cleared:07d}",
+            SCREEN_WIDTH // 2 + 20,
+            SCREEN_HEIGHT - 50,
             arcade.color.WHITE,
             14,
             font_name=self.font_name,
         )
 
         if self.game_over:
-            arcade.draw_rectangle_filled(
-                SCREEN_WIDTH // 2,
-                SCREEN_HEIGHT // 2,
+            self.max_score = max(self.score, self.max_score)
+            arcade.draw_lbwh_rectangle_filled(
+                0,
+                0,
                 SCREEN_WIDTH,
                 SCREEN_HEIGHT,
                 (0, 0, 0, 200),
@@ -176,8 +198,8 @@ class TetrisGame(arcade.Window):
                 anchor_x="center",
             )
 
-            stats_x = PLAYFIELD_X - 180
-            stats_y = PLAYFIELD_Y + GRID_HEIGHT * GRID_SIZE - 30
+            stats_x = 70
+            stats_y = SCREEN_HEIGHT - 205
             arcade.draw_text(
                 "Piece Stats",
                 stats_x,
@@ -188,13 +210,13 @@ class TetrisGame(arcade.Window):
             )
 
             stats_sprites = arcade.SpriteList()
-            mini_size = 12
+            mini_size = 16
             for i in range(7):
                 shape = SHAPES[i]
                 h, w = len(shape), len(shape[0])
                 off_x = (4 - w) * mini_size // 2
                 off_y = (4 - h) * mini_size // 2
-                base_y = stats_y - 30 - i * 40
+                base_y = stats_y - 75 - i * 55
 
                 for r, row in enumerate(shape):
                     for c, cell in enumerate(row):
@@ -211,8 +233,8 @@ class TetrisGame(arcade.Window):
 
                 arcade.draw_text(
                     f"x{self.piece_count[i]}",
-                    stats_x + 20 + 4 * mini_size + 5,
-                    base_y + 10,
+                    stats_x + 30 + 4 * mini_size ,
+                    base_y + 27,
                     arcade.color.WHITE,
                     10,
                     font_name=self.font_name,
@@ -226,12 +248,19 @@ class TetrisGame(arcade.Window):
     def _update_next_piece_display(self):
         self.next_piece_sprites.clear()
         shape = self.next_piece.shape
+        shape_idx = self.next_piece.shape_idx
 
         offset_x = (4 - len(shape[0])) // 2
         offset_y = (4 - len(shape)) // 2
 
-        base_x = PLAYFIELD_X + PLAYFIELD_WIDTH + 30
-        base_y = PLAYFIELD_Y + PLAYFIELD_HEIGHT - 100
+        base_x = PLAYFIELD_X + PLAYFIELD_WIDTH + 75
+        base_y = PLAYFIELD_Y + PLAYFIELD_HEIGHT - 220
+        if shape_idx == 0:
+            base_y -= 10
+            base_x -= 12
+        elif shape_idx == 1:
+            base_y += 6
+            base_x -= 10
         for r, row in enumerate(shape):
             for c, cell in enumerate(row):
                 if cell:
@@ -298,8 +327,8 @@ class TetrisGame(arcade.Window):
             self._rebuild_block_sprites()
             return
 
-        current_time = arcade.get_time()
-        keys = arcade.get_pressed_keys()
+        current_time = time.time()
+        keys = self.preset_key
 
         if arcade.key.A in keys:
             if current_time - self.last_horizontal_time >= self.horizontal_delay:
@@ -324,6 +353,7 @@ class TetrisGame(arcade.Window):
             self._update_next_piece_display()
 
     def on_key_press(self, key, modifiers):
+        self.preset_key.add(key)
         if key == arcade.key.R and self.game_over:
             self.reset()
         elif key == arcade.key.P:
@@ -334,6 +364,10 @@ class TetrisGame(arcade.Window):
             elif key == arcade.key.SPACE:
                 while self.move(0, 1):
                     pass
+
+    def on_key_release(self, key, modifiers):
+        if key in self.preset_key:
+            self.preset_key.remove(key)
 
     def merge_piece(self):
         for r, row in enumerate(self.current_piece.shape):
@@ -380,7 +414,7 @@ class TetrisGame(arcade.Window):
         if not 0 <= x < GRID_WIDTH:
             return
         center_x = PLAYFIELD_X + x * GRID_SIZE + GRID_SIZE // 2
-        center_y = PLAYFIELD_Y + y * GRID_SIZE + GRID_SIZE // 2
+        center_y = PLAYFIELD_Y + (GRID_HEIGHT - y - 1) * GRID_SIZE + GRID_SIZE // 2
         sprite = arcade.Sprite()
         sprite.texture = self.block_textures[shape_idx]
         sprite.center_x = center_x
