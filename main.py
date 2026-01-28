@@ -3,6 +3,7 @@ import os
 import time
 import random
 
+# === Константы ===
 TITLE = "Tetris"
 SCREEN_WIDTH = 800
 SCREEN_HEIGHT = 640
@@ -10,7 +11,7 @@ GRID_SIZE = 25
 GRID_WIDTH = 10
 GRID_HEIGHT = 20
 SIDEBAR_WIDTH = 200
-
+# === Цвета тетрамин(при ошибке загрузки избражений) ===
 COLORS = [
     (0, 255, 255),
     (255, 255, 0),
@@ -20,7 +21,7 @@ COLORS = [
     (0, 0, 255),
     (255, 165, 0),
 ]
-
+# === Шаблоны тетрамин ===
 SHAPES = [
     [[1, 1, 1, 1]],
     [[1, 1], [1, 1]],
@@ -30,27 +31,32 @@ SHAPES = [
     [[1, 0, 0], [1, 1, 1]],
     [[0, 0, 1], [1, 1, 1]],
 ]
-
+# === Координаты поля ===
 PLAYFIELD_WIDTH = GRID_WIDTH * GRID_SIZE
 PLAYFIELD_HEIGHT = GRID_HEIGHT * GRID_SIZE
 PLAYFIELD_X = (SCREEN_WIDTH - SIDEBAR_WIDTH - PLAYFIELD_WIDTH) // 2 + 125
 PLAYFIELD_Y = (SCREEN_HEIGHT - PLAYFIELD_HEIGHT) // 2 - 46
 
 
+# === Класс тетрамины ===
 class Tetromino:
+    # === конструктор тетрамины ===
     def __init__(self):
         self.shape_idx = random.randint(0, len(SHAPES) - 1)
         self.shape = SHAPES[self.shape_idx]
         self.x = GRID_WIDTH // 2 - len(self.shape[0]) // 2
         self.y = 0
 
+    # === функция поворота тетрамины ===
     def rotate(self):
         rows = len(self.shape)
         cols = len(self.shape[0])
         return [[self.shape[rows - 1 - j][i] for j in range(rows)] for i in range(cols)]
 
 
+# === Класс игры ===
 class TetrisGame(arcade.Window):
+    # === конструктор игры ===
     def __init__(self, SCREEN_WIDTH, SCREEN_HEIGHT, TITLE):
         super().__init__(SCREEN_WIDTH, SCREEN_HEIGHT, TITLE)
         self.background_sprites = arcade.SpriteList()
@@ -86,6 +92,7 @@ class TetrisGame(arcade.Window):
 
         # self.grid = [[0 for _ in range(GRID_WIDTH)] for _ in range(GRID_HEIGHT)]
 
+    # === функция отрисовки игры ===
     def on_draw(self):
         self.clear()
         self.background_sprites.draw()
@@ -233,7 +240,7 @@ class TetrisGame(arcade.Window):
 
                 arcade.draw_text(
                     f"x{self.piece_count[i]}",
-                    stats_x + 30 + 4 * mini_size ,
+                    stats_x + 30 + 4 * mini_size,
                     base_y + 27,
                     arcade.color.WHITE,
                     10,
@@ -245,6 +252,7 @@ class TetrisGame(arcade.Window):
         #     for x in range(GRID_WIDTH):
         #         pass
 
+    # === функция отрисовки следующей фигуры ===
     def _update_next_piece_display(self):
         self.next_piece_sprites.clear()
         shape = self.next_piece.shape
@@ -276,6 +284,7 @@ class TetrisGame(arcade.Window):
                     sprite.height = GRID_SIZE
                     self.next_piece_sprites.append(sprite)
 
+    # === функция сброса игры ===
     def reset(self):
         self.grid = [[0 for _ in range(GRID_WIDTH)] for _ in range(GRID_HEIGHT)]
         self.current_piece = Tetromino()
@@ -293,6 +302,7 @@ class TetrisGame(arcade.Window):
         self.last_horizontal_time = 0.0
         self._update_next_piece_display()
 
+    # === функция проверки допустимости позиции фигуры ===
     def valid_position(self, shape, x, y):
         for r, row in enumerate(shape):
             for c, cell in enumerate(row):
@@ -304,6 +314,7 @@ class TetrisGame(arcade.Window):
                         return False
         return True
 
+    # === функция перемещения фигуры ===
     def move(self, dx, dy):
         if self.game_over or self.paused:
             return False
@@ -313,6 +324,7 @@ class TetrisGame(arcade.Window):
             return True
         return False
 
+    # === функция поворота фигуры ===
     def rotate_piece(self):
         if self.game_over or self.paused:
             return False
@@ -322,6 +334,7 @@ class TetrisGame(arcade.Window):
             return True
         return False
 
+    # === функция обновления игрового мира ===
     def on_update(self, delta_time):
         if self.paused or self.game_over:
             self._rebuild_block_sprites()
@@ -352,6 +365,7 @@ class TetrisGame(arcade.Window):
         if self.paused or self.game_over:
             self._update_next_piece_display()
 
+    # === функция обработки нажатия клавиш ===
     def on_key_press(self, key, modifiers):
         self.preset_key.add(key)
         if key == arcade.key.R and self.game_over:
@@ -365,10 +379,6 @@ class TetrisGame(arcade.Window):
                 while self.move(0, 1):
                     pass
 
-    def on_key_release(self, key, modifiers):
-        if key in self.preset_key:
-            self.preset_key.remove(key)
-
     def merge_piece(self):
         for r, row in enumerate(self.current_piece.shape):
             for c, cell in enumerate(row):
@@ -379,6 +389,7 @@ class TetrisGame(arcade.Window):
                             self.current_piece.shape_idx + 1
                         )
 
+    # === функция создания новой фигуры ===
     def new_piece(self):
         self.current_piece = self.next_piece
         self.next_piece = Tetromino()
@@ -390,6 +401,7 @@ class TetrisGame(arcade.Window):
         else:
             self._update_next_piece_display()
 
+    # === функция перестройки блоков ===
     def _rebuild_block_sprites(self):
         self.block_sprites.clear()
         for y in range(GRID_HEIGHT):
@@ -410,6 +422,7 @@ class TetrisGame(arcade.Window):
                                 x, y, self.current_piece.shape_idx
                             )
 
+    # === функция добавления блока в список спрайтов ===
     def _add_block_to_sprite_list(self, x, y, shape_idx):
         if not 0 <= x < GRID_WIDTH:
             return
@@ -423,6 +436,7 @@ class TetrisGame(arcade.Window):
         sprite.height = GRID_SIZE
         self.block_sprites.append(sprite)
 
+    # === функция очистки строк ===
     def clear_lines(self):
         lines_to_clear = [y for y in range(GRID_HEIGHT) if all(self.grid[y])]
         for y in lines_to_clear:
