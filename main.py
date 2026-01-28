@@ -94,7 +94,6 @@ class TetrisGame(arcade.Window):
     def on_draw(self):
         self.clear()
         self.background_sprites.draw()
-
         self.block_sprites.draw()
         self.next_piece_sprites.draw()
 
@@ -370,6 +369,11 @@ class TetrisGame(arcade.Window):
             elif key == arcade.key.SPACE:
                 while self.move(0, 1):
                     pass
+
+    # === функция обработки отпускания клавиш ===
+    def on_key_release(self, key, modifiers):
+        if key in self.preset_key:
+            self.preset_key.remove(key)
 
     # === функция слияния фигуры ===
     def merge_piece(self):
