@@ -90,15 +90,10 @@ class TetrisGame(arcade.Window):
         self.max_score = 0
         self.reset()
 
-        # self.grid = [[0 for _ in range(GRID_WIDTH)] for _ in range(GRID_HEIGHT)]
-
     # === функция отрисовки игры ===
     def on_draw(self):
         self.clear()
         self.background_sprites.draw()
-        # arcade.draw_line(PLAYFIELD_X, 0, PLAYFIELD_X, SCREEN_HEIGHT, arcade.color.RED, 4)
-        # arcade.draw_line(PLAYFIELD_X, PLAYFIELD_Y, PLAYFIELD_X + PLAYFIELD_WIDTH, PLAYFIELD_Y, arcade.color.RED, 4)
-        # arcade.draw_line(PLAYFIELD_X, PLAYFIELD_Y + PLAYFIELD_HEIGHT, PLAYFIELD_X + PLAYFIELD_WIDTH, PLAYFIELD_Y + PLAYFIELD_HEIGHT, arcade.color.RED, 4)
 
         self.block_sprites.draw()
         self.next_piece_sprites.draw()
@@ -248,9 +243,6 @@ class TetrisGame(arcade.Window):
                 )
 
             stats_sprites.draw()
-        # for y in range(GRID_HEIGHT):
-        #     for x in range(GRID_WIDTH):
-        #         pass
 
     # === функция отрисовки следующей фигуры ===
     def _update_next_piece_display(self):
@@ -379,6 +371,7 @@ class TetrisGame(arcade.Window):
                 while self.move(0, 1):
                     pass
 
+    # === функция слияния фигуры ===
     def merge_piece(self):
         for r, row in enumerate(self.current_piece.shape):
             for c, cell in enumerate(row):
