@@ -1,7 +1,16 @@
 import arcade
 import os
+import sys
 import time
+
+project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if project_root not in sys.path:
+    sys.path.insert(0, project_root)
+from database.database import init_db, get_max_score, update_max_score
 from Tetramino import *
+
+project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, project_root)
 
 # === Константы ===
 TITLE = "Tetris"
@@ -59,7 +68,7 @@ class TetrisGame(arcade.Window):
         else:
             self.font_name = "Arial"
         self.preset_key = set()
-        self.max_score = 0
+        self.max_score = get_max_score()
         self.reset()
 
     # === функция отрисовки игры ===
@@ -148,7 +157,8 @@ class TetrisGame(arcade.Window):
             if self.is_game_not_over:
                 arcade.play_sound(self.game_over_sound)
                 self.is_game_not_over = False
-            self.max_score = max(self.score, self.max_score)
+            update_max_score(self.score)
+            self.max_score = get_max_score()
             arcade.draw_lbwh_rectangle_filled(
                 0,
                 0,
@@ -367,7 +377,7 @@ class TetrisGame(arcade.Window):
                     gy = self.current_piece.y + r
                     if gy >= 0:
                         self.grid[gy][self.current_piece.x + c] = (
-                                self.current_piece.shape_idx + 1
+                            self.current_piece.shape_idx + 1
                         )
 
     # === функция создания новой фигуры ===
@@ -376,7 +386,7 @@ class TetrisGame(arcade.Window):
         self.next_piece = Tetromino()
         self.piece_count[self.current_piece.shape_idx] += 1
         if not self.valid_position(
-                self.current_piece.shape, self.current_piece.x, self.current_piece.y
+            self.current_piece.shape, self.current_piece.x, self.current_piece.y
         ):
             self.game_over = True
         else:
@@ -434,6 +444,7 @@ class TetrisGame(arcade.Window):
 
 
 def main():
+    init_db()
     game = TetrisGame(SCREEN_WIDTH, SCREEN_HEIGHT, TITLE)
     arcade.run()
 
