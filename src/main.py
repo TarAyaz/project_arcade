@@ -3,14 +3,12 @@ import os
 import sys
 import time
 
+# === Настройка путей ===
 project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if project_root not in sys.path:
     sys.path.insert(0, project_root)
 from database.database import init_db, get_max_score, update_max_score
 from Tetramino import *
-
-project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.insert(0, project_root)
 
 # === Константы ===
 TITLE = "Tetris"
@@ -33,6 +31,7 @@ class TetrisGame(arcade.Window):
     # === конструктор игры ===
     def __init__(self, SCREEN_WIDTH, SCREEN_HEIGHT, TITLE):
         super().__init__(SCREEN_WIDTH, SCREEN_HEIGHT, TITLE)
+        # === Загрузка звука ===
         self.game_over_sound = arcade.load_sound("../sounds/sfx/game_over.mp3")
         self.clear_sound = arcade.load_sound("../sounds/sfx/line_clear.mp3")
         self.move_sound = arcade.load_sound("../sounds/sfx/move_piece.mp3")
@@ -41,6 +40,7 @@ class TetrisGame(arcade.Window):
         self.tetris_music = arcade.load_sound("../sounds/music/Tetris_Theme.mp3")
         self.is_game_not_over = True
         self.background_sprites = arcade.SpriteList()
+        # === Загрузка фона ===
         self.bg_path = "../images/tetris/game_fon/0.png"
         self.bg_sprite = arcade.Sprite(self.bg_path)
         self.bg_sprite.center_x = SCREEN_WIDTH // 2
@@ -48,6 +48,13 @@ class TetrisGame(arcade.Window):
         self.bg_sprite.width = SCREEN_WIDTH
         self.bg_sprite.height = SCREEN_HEIGHT
         self.background_sprites.append(self.bg_sprite)
+        # === Состояние игры ===
+        self.state = "menu"
+        # === Кнопка старта ===
+        self.start_button = arcade.Sprite("../images/tetris/button/0.png")
+        self.start_button.center_x = SCREEN_WIDTH // 2
+        self.start_button.center_y = SCREEN_HEIGHT // 2
+        # === Загрузка текстур блоков ===
         self.block_textures = []
         for i in range(7):
             path = f"../images/tetris/blocks/{i}.png"
@@ -58,9 +65,8 @@ class TetrisGame(arcade.Window):
                     name=f"color_block_{i}", size=(1, 1), color=COLORS[i]
                 )
                 self.block_textures.append(color_img)
-
         self.next_piece_sprites = arcade.SpriteList()
-
+        # === Загрузка Шрифтов ===
         font_path = "../images/tetris/fonts/PressStart2P-Regular.ttf"
         if os.path.exists(font_path):
             arcade.load_font(font_path)
@@ -75,159 +81,181 @@ class TetrisGame(arcade.Window):
     def on_draw(self):
         self.clear()
         self.background_sprites.draw()
-        self.block_sprites.draw()
-        self.next_piece_sprites.draw()
 
-        arcade.draw_text(
-            "NEXT",
-            PLAYFIELD_X + PLAYFIELD_WIDTH + 71,
-            PLAYFIELD_Y + PLAYFIELD_HEIGHT // 2 + 60,
-            arcade.color.WHITE,
-            16,
-            font_name=self.font_name,
-            anchor_x="left",
-        )
-        arcade.draw_text(
-            "Score:",
-            SCREEN_WIDTH - 190,
-            SCREEN_HEIGHT - 50,
-            arcade.color.WHITE,
-            14,
-            font_name=self.font_name,
-        )
-        arcade.draw_text(
-            f"{self.score:06d}",
-            SCREEN_WIDTH - 190,
-            SCREEN_HEIGHT - 90,
-            arcade.color.WHITE,
-            14,
-            font_name=self.font_name,
-        )
-        arcade.draw_text(
-            "Record:",
-            SCREEN_WIDTH - 190,
-            SCREEN_HEIGHT - 130,
-            arcade.color.WHITE,
-            14,
-            font_name=self.font_name,
-        )
-        arcade.draw_text(
-            f"{self.max_score:06d}",
-            SCREEN_WIDTH - 190,
-            SCREEN_HEIGHT - 170,
-            arcade.color.WHITE,
-            14,
-            font_name=self.font_name,
-        )
-        arcade.draw_text(
-            "Level:",
-            SCREEN_WIDTH - 190,
-            160,
-            arcade.color.WHITE,
-            14,
-            font_name=self.font_name,
-        )
-        arcade.draw_text(
-            f"{self.level:06d}",
-            SCREEN_WIDTH - 190,
-            125,
-            arcade.color.WHITE,
-            14,
-            font_name=self.font_name,
-        )
-        arcade.draw_text(
-            "Lines:",
-            SCREEN_WIDTH // 2 - 100,
-            SCREEN_HEIGHT - 50,
-            arcade.color.WHITE,
-            14,
-            font_name=self.font_name,
-        )
-        arcade.draw_text(
-            f"{self.lines_cleared:07d}",
-            SCREEN_WIDTH // 2 + 20,
-            SCREEN_HEIGHT - 50,
-            arcade.color.WHITE,
-            14,
-            font_name=self.font_name,
-        )
-
-        if self.game_over:
-            arcade.stop_sound(self.music)
-            if self.is_game_not_over:
-                arcade.play_sound(self.game_over_sound)
-                self.is_game_not_over = False
-            update_max_score(self.score)
-            self.max_score = get_max_score()
-            arcade.draw_lbwh_rectangle_filled(
-                0,
-                0,
-                SCREEN_WIDTH,
-                SCREEN_HEIGHT,
-                (0, 0, 0, 200),
-            )
+        if self.state == "menu":
+            # === Отрисовка стартового окна ===
+            self.start_button.draw()
             arcade.draw_text(
-                "GAME OVER",
+                "TETRIS",
                 SCREEN_WIDTH // 2,
-                SCREEN_HEIGHT // 2 + 60,
+                SCREEN_HEIGHT // 2 + 80,
                 arcade.color.WHITE,
                 24,
                 font_name=self.font_name,
                 anchor_x="center",
             )
+        else:
+            self.block_sprites.draw()
+            self.next_piece_sprites.draw()
             arcade.draw_text(
-                "Press R to Restart",
-                SCREEN_WIDTH // 2,
-                SCREEN_HEIGHT // 2 + 20,
+                "NEXT",
+                PLAYFIELD_X + PLAYFIELD_WIDTH + 71,
+                PLAYFIELD_Y + PLAYFIELD_HEIGHT // 2 + 60,
                 arcade.color.WHITE,
                 16,
                 font_name=self.font_name,
-                anchor_x="center",
+                anchor_x="left",
             )
-
-            stats_x = 70
-            stats_y = SCREEN_HEIGHT - 205
             arcade.draw_text(
-                "Piece Stats",
-                stats_x,
-                stats_y,
+                "Score:",
+                SCREEN_WIDTH - 190,
+                SCREEN_HEIGHT - 50,
                 arcade.color.WHITE,
-                12,
+                14,
+                font_name=self.font_name,
+            )
+            arcade.draw_text(
+                f"{self.score:06d}",
+                SCREEN_WIDTH - 190,
+                SCREEN_HEIGHT - 90,
+                arcade.color.WHITE,
+                14,
+                font_name=self.font_name,
+            )
+            arcade.draw_text(
+                "Record:",
+                SCREEN_WIDTH - 190,
+                SCREEN_HEIGHT - 130,
+                arcade.color.WHITE,
+                14,
+                font_name=self.font_name,
+            )
+            arcade.draw_text(
+                f"{self.max_score:06d}",
+                SCREEN_WIDTH - 190,
+                SCREEN_HEIGHT - 170,
+                arcade.color.WHITE,
+                14,
+                font_name=self.font_name,
+            )
+            arcade.draw_text(
+                "Level:",
+                SCREEN_WIDTH - 190,
+                160,
+                arcade.color.WHITE,
+                14,
+                font_name=self.font_name,
+            )
+            arcade.draw_text(
+                f"{self.level:06d}",
+                SCREEN_WIDTH - 190,
+                125,
+                arcade.color.WHITE,
+                14,
+                font_name=self.font_name,
+            )
+            arcade.draw_text(
+                "Lines:",
+                SCREEN_WIDTH // 2 - 100,
+                SCREEN_HEIGHT - 50,
+                arcade.color.WHITE,
+                14,
+                font_name=self.font_name,
+            )
+            arcade.draw_text(
+                f"{self.lines_cleared:07d}",
+                SCREEN_WIDTH // 2 + 20,
+                SCREEN_HEIGHT - 50,
+                arcade.color.WHITE,
+                14,
                 font_name=self.font_name,
             )
 
-            stats_sprites = arcade.SpriteList()
-            mini_size = 16
-            for i in range(7):
-                shape = SHAPES[i]
-                h, w = len(shape), len(shape[0])
-                off_x = (4 - w) * mini_size // 2
-                off_y = (4 - h) * mini_size // 2
-                base_y = stats_y - 75 - i * 55
-
-                for r, row in enumerate(shape):
-                    for c, cell in enumerate(row):
-                        if cell:
-                            px = stats_x + 20 + off_x + c * mini_size
-                            py = base_y + off_y + r * mini_size
-                            sprite = arcade.Sprite()
-                            sprite.texture = self.block_textures[i]
-                            sprite.center_x = px + mini_size // 2
-                            sprite.center_y = py + mini_size // 2
-                            sprite.width = mini_size
-                            sprite.height = mini_size
-                            stats_sprites.append(sprite)
-
+            if self.game_over:
+                arcade.stop_sound(self.music)
+                if self.is_game_not_over:
+                    arcade.play_sound(self.game_over_sound)
+                    self.is_game_not_over = False
+                update_max_score(self.score)
+                self.max_score = get_max_score()
+                arcade.draw_lbwh_rectangle_filled(
+                    0,
+                    0,
+                    SCREEN_WIDTH,
+                    SCREEN_HEIGHT,
+                    (0, 0, 0, 200),
+                )
                 arcade.draw_text(
-                    f"x{self.piece_count[i]}",
-                    stats_x + 30 + 4 * mini_size,
-                    base_y + 27,
+                    "GAME OVER",
+                    SCREEN_WIDTH // 2,
+                    SCREEN_HEIGHT // 2 + 60,
                     arcade.color.WHITE,
-                    10,
+                    24,
+                    font_name=self.font_name,
+                    anchor_x="center",
+                )
+                arcade.draw_text(
+                    "Press R to Restart",
+                    SCREEN_WIDTH // 2,
+                    SCREEN_HEIGHT // 2 + 20,
+                    arcade.color.WHITE,
+                    16,
+                    font_name=self.font_name,
+                    anchor_x="center",
+                )
+                arcade.draw_text(
+                    "Press M for Menu",
+                    SCREEN_WIDTH // 2,
+                    SCREEN_HEIGHT // 2 - 20,
+                    arcade.color.WHITE,
+                    16,
+                    font_name=self.font_name,
+                    anchor_x="center",
+                )
+
+                stats_x = 70
+                stats_y = SCREEN_HEIGHT - 205
+                arcade.draw_text(
+                    "Piece Stats",
+                    stats_x,
+                    stats_y,
+                    arcade.color.WHITE,
+                    12,
                     font_name=self.font_name,
                 )
 
-            stats_sprites.draw()
+                stats_sprites = arcade.SpriteList()
+                mini_size = 16
+                for i in range(7):
+                    shape = SHAPES[i]
+                    h, w = len(shape), len(shape[0])
+                    off_x = (4 - w) * mini_size // 2
+                    off_y = (4 - h) * mini_size // 2
+                    base_y = stats_y - 75 - i * 55
+
+                    for r, row in enumerate(shape):
+                        for c, cell in enumerate(row):
+                            if cell:
+                                px = stats_x + 20 + off_x + c * mini_size
+                                py = base_y + off_y + r * mini_size
+                                sprite = arcade.Sprite()
+                                sprite.texture = self.block_textures[i]
+                                sprite.center_x = px + mini_size // 2
+                                sprite.center_y = py + mini_size // 2
+                                sprite.width = mini_size
+                                sprite.height = mini_size
+                                stats_sprites.append(sprite)
+
+                    arcade.draw_text(
+                        f"x{self.piece_count[i]}",
+                        stats_x + 30 + 4 * mini_size,
+                        base_y + 27,
+                        arcade.color.WHITE,
+                        10,
+                        font_name=self.font_name,
+                    )
+
+                stats_sprites.draw()
 
     # === функция отрисовки следующей фигуры ===
     def _update_next_piece_display(self):
@@ -263,6 +291,9 @@ class TetrisGame(arcade.Window):
 
     # === функция сброса игры ===
     def reset(self):
+        if self.state == "menu":
+            return
+
         self.grid = [[0 for _ in range(GRID_WIDTH)] for _ in range(GRID_HEIGHT)]
         self.current_piece = Tetromino()
         self.next_piece = Tetromino()
@@ -281,7 +312,7 @@ class TetrisGame(arcade.Window):
         self._update_next_piece_display()
         self.music = arcade.play_sound(self.tetris_music, loop=True)
 
-    # === функция проверки допустимости позиции фигуры ===
+    # === функция проверки позиции фигуры ===
     def valid_position(self, shape, x, y):
         for r, row in enumerate(shape):
             for c, cell in enumerate(row):
@@ -295,7 +326,7 @@ class TetrisGame(arcade.Window):
 
     # === функция перемещения фигуры ===
     def move(self, dx, dy):
-        if self.game_over or self.paused:
+        if self.game_over or self.paused or self.state == "menu":
             return False
         nx, ny = self.current_piece.x + dx, self.current_piece.y + dy
         if self.valid_position(self.current_piece.shape, nx, ny):
@@ -305,7 +336,7 @@ class TetrisGame(arcade.Window):
 
     # === функция поворота фигуры ===
     def rotate_piece(self):
-        if self.game_over or self.paused:
+        if self.game_over or self.paused or self.state == "menu":
             return False
         rotated = self.current_piece.rotate()
         if self.valid_position(rotated, self.current_piece.x, self.current_piece.y):
@@ -316,6 +347,9 @@ class TetrisGame(arcade.Window):
 
     # === функция обновления игрового мира ===
     def on_update(self, delta_time):
+        if self.state == "menu":
+            return
+
         if self.paused or self.game_over:
             self._rebuild_block_sprites()
             return
@@ -349,9 +383,15 @@ class TetrisGame(arcade.Window):
 
     # === функция обработки нажатия клавиш ===
     def on_key_press(self, key, modifiers):
+        if self.state == "menu":
+            return
+
         self.preset_key.add(key)
         if key == arcade.key.R and self.game_over:
             self.reset()
+        elif key == arcade.key.M and self.game_over:
+            self.state = "menu"
+            arcade.stop_sound(self.music)
         elif key == arcade.key.P:
             self.paused = not self.paused
         elif not self.paused and not self.game_over:
@@ -368,6 +408,13 @@ class TetrisGame(arcade.Window):
     def on_key_release(self, key, modifiers):
         if key in self.preset_key:
             self.preset_key.remove(key)
+
+    # === функция обработки кликов мыши ===
+    def on_mouse_press(self, x, y, button, modifiers):
+        if self.state == "menu":
+            if self.start_button.collides_with_point((x, y)):
+                self.state = "playing"
+                self.reset()
 
     # === функция слияния фигуры ===
     def merge_piece(self):
@@ -402,7 +449,7 @@ class TetrisGame(arcade.Window):
                     shape_idx = cell_value - 1
                     self._add_block_to_sprite_list(x, y, shape_idx)
 
-        if not self.game_over:
+        if not self.game_over and self.state != "menu":
             for r, row in enumerate(self.current_piece.shape):
                 for c, cell in enumerate(row):
                     if cell:
