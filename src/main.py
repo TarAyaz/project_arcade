@@ -1,7 +1,7 @@
 import arcade
 import os
 import time
-import random
+from Tetramino import *
 
 # === Константы ===
 TITLE = "Tetris"
@@ -11,26 +11,7 @@ GRID_SIZE = 25
 GRID_WIDTH = 10
 GRID_HEIGHT = 20
 SIDEBAR_WIDTH = 200
-# === Цвета тетрамин(при ошибке загрузки избражений) ===
-COLORS = [
-    (0, 255, 255),
-    (255, 255, 0),
-    (255, 0, 255),
-    (0, 255, 0),
-    (255, 0, 0),
-    (0, 0, 255),
-    (255, 165, 0),
-]
-# === Шаблоны тетрамин ===
-SHAPES = [
-    [[1, 1, 1, 1]],
-    [[1, 1], [1, 1]],
-    [[0, 1, 0], [1, 1, 1]],
-    [[0, 1, 1], [1, 1, 0]],
-    [[1, 1, 0], [0, 1, 1]],
-    [[1, 0, 0], [1, 1, 1]],
-    [[0, 0, 1], [1, 1, 1]],
-]
+
 # === Координаты поля ===
 PLAYFIELD_WIDTH = GRID_WIDTH * GRID_SIZE
 PLAYFIELD_HEIGHT = GRID_HEIGHT * GRID_SIZE
@@ -38,29 +19,20 @@ PLAYFIELD_X = (SCREEN_WIDTH - SIDEBAR_WIDTH - PLAYFIELD_WIDTH) // 2 + 125
 PLAYFIELD_Y = (SCREEN_HEIGHT - PLAYFIELD_HEIGHT) // 2 - 46
 
 
-# === Класс тетрамины ===
-class Tetromino:
-    # === конструктор тетрамины ===
-    def __init__(self):
-        self.shape_idx = random.randint(0, len(SHAPES) - 1)
-        self.shape = SHAPES[self.shape_idx]
-        self.x = GRID_WIDTH // 2 - len(self.shape[0]) // 2
-        self.y = 0
-
-    # === функция поворота тетрамины ===
-    def rotate(self):
-        rows = len(self.shape)
-        cols = len(self.shape[0])
-        return [[self.shape[rows - 1 - j][i] for j in range(rows)] for i in range(cols)]
-
-
 # === Класс игры ===
 class TetrisGame(arcade.Window):
     # === конструктор игры ===
     def __init__(self, SCREEN_WIDTH, SCREEN_HEIGHT, TITLE):
         super().__init__(SCREEN_WIDTH, SCREEN_HEIGHT, TITLE)
+        self.game_over_sound = arcade.load_sound("../sounds/sfx/game_over.mp3")
+        self.clear_sound = arcade.load_sound("../sounds/sfx/line_clear.mp3")
+        self.move_sound = arcade.load_sound("../sounds/sfx/move_piece.mp3")
+        self.drop_sound = arcade.load_sound("../sounds/sfx/piece_landed.mp3")
+        self.rotate_sound = arcade.load_sound("../sounds/sfx/rotate_piece.mp3")
+        self.tetris_music = arcade.load_sound("../sounds/music/Tetris_Theme.mp3")
+        self.is_game_not_over = True
         self.background_sprites = arcade.SpriteList()
-        self.bg_path = "images/tetris/game_fon/0.png"
+        self.bg_path = "../images/tetris/game_fon/0.png"
         self.bg_sprite = arcade.Sprite(self.bg_path)
         self.bg_sprite.center_x = SCREEN_WIDTH // 2
         self.bg_sprite.center_y = SCREEN_HEIGHT // 2
@@ -69,7 +41,7 @@ class TetrisGame(arcade.Window):
         self.background_sprites.append(self.bg_sprite)
         self.block_textures = []
         for i in range(7):
-            path = f"images/tetris/blocks/{i}.png"
+            path = f"../images/tetris/blocks/{i}.png"
             if os.path.exists(path):
                 self.block_textures.append(arcade.load_texture(path))
             else:
@@ -80,7 +52,7 @@ class TetrisGame(arcade.Window):
 
         self.next_piece_sprites = arcade.SpriteList()
 
-        font_path = "images/tetris/fonts/PressStart2P-Regular.ttf"
+        font_path = "../images/tetris/fonts/PressStart2P-Regular.ttf"
         if os.path.exists(font_path):
             arcade.load_font(font_path)
             self.font_name = "Press Start 2P"
@@ -172,6 +144,10 @@ class TetrisGame(arcade.Window):
         )
 
         if self.game_over:
+            arcade.stop_sound(self.music)
+            if self.is_game_not_over:
+                arcade.play_sound(self.game_over_sound)
+                self.is_game_not_over = False
             self.max_score = max(self.score, self.max_score)
             arcade.draw_lbwh_rectangle_filled(
                 0,
@@ -281,6 +257,7 @@ class TetrisGame(arcade.Window):
         self.current_piece = Tetromino()
         self.next_piece = Tetromino()
         self.game_over = False
+        self.is_game_not_over = True
         self.fall_speed = 0.5
         self.fall_timer = 0.0
         self.paused = False
@@ -292,6 +269,7 @@ class TetrisGame(arcade.Window):
         self.horizontal_delay = 0.1
         self.last_horizontal_time = 0.0
         self._update_next_piece_display()
+        self.music = arcade.play_sound(self.tetris_music, loop=True)
 
     # === функция проверки допустимости позиции фигуры ===
     def valid_position(self, shape, x, y):
@@ -322,6 +300,7 @@ class TetrisGame(arcade.Window):
         rotated = self.current_piece.rotate()
         if self.valid_position(rotated, self.current_piece.x, self.current_piece.y):
             self.current_piece.shape = rotated
+            arcade.play_sound(self.rotate_sound)
             return True
         return False
 
@@ -338,10 +317,12 @@ class TetrisGame(arcade.Window):
             if current_time - self.last_horizontal_time >= self.horizontal_delay:
                 self.move(-1, 0)
                 self.last_horizontal_time = current_time
+                arcade.play_sound(self.move_sound)
         elif arcade.key.D in keys:
             if current_time - self.last_horizontal_time >= self.horizontal_delay:
                 self.move(1, 0)
                 self.last_horizontal_time = current_time
+                arcade.play_sound(self.move_sound)
         else:
             self.last_horizontal_time = current_time
 
@@ -367,8 +348,11 @@ class TetrisGame(arcade.Window):
             if key == arcade.key.W:
                 self.rotate_piece()
             elif key == arcade.key.SPACE:
+                is_moving = False
                 while self.move(0, 1):
-                    pass
+                    is_moving = True
+                if is_moving:
+                    arcade.play_sound(self.drop_sound)
 
     # === функция обработки отпускания клавиш ===
     def on_key_release(self, key, modifiers):
@@ -383,7 +367,7 @@ class TetrisGame(arcade.Window):
                     gy = self.current_piece.y + r
                     if gy >= 0:
                         self.grid[gy][self.current_piece.x + c] = (
-                            self.current_piece.shape_idx + 1
+                                self.current_piece.shape_idx + 1
                         )
 
     # === функция создания новой фигуры ===
@@ -392,7 +376,7 @@ class TetrisGame(arcade.Window):
         self.next_piece = Tetromino()
         self.piece_count[self.current_piece.shape_idx] += 1
         if not self.valid_position(
-            self.current_piece.shape, self.current_piece.x, self.current_piece.y
+                self.current_piece.shape, self.current_piece.x, self.current_piece.y
         ):
             self.game_over = True
         else:
@@ -446,6 +430,7 @@ class TetrisGame(arcade.Window):
             self.score += [100, 300, 500, 800][min(clear - 1, 3)] * self.level
             self.level = self.lines_cleared // 10 + 1
             self.fall_speed = max(0.05, 0.5 - (self.level - 1) * 0.05)
+            arcade.play_sound(self.clear_sound)
 
 
 def main():
