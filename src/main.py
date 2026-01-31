@@ -3,9 +3,6 @@ import os
 import sys
 import time
 
-from arcade import SpriteList
-from pymunk import Space
-
 # === Настройка путей ===
 project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if project_root not in sys.path:
