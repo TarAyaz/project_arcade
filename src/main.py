@@ -3,6 +3,9 @@ import os
 import sys
 import time
 
+from arcade import SpriteList
+from pymunk import Space
+
 # === Настройка путей ===
 project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if project_root not in sys.path:
@@ -52,8 +55,10 @@ class TetrisGame(arcade.Window):
         self.state = "menu"
         # === Кнопка старта ===
         self.start_button = arcade.Sprite("../images/tetris/button/0.png")
-        self.start_button.center_x = SCREEN_WIDTH // 2
+        self.start_button.center_x = SCREEN_WIDTH // 2 + 25
         self.start_button.center_y = SCREEN_HEIGHT // 2
+        self.buttons = arcade.SpriteList()
+        self.buttons.append(self.start_button)
         # === Загрузка текстур блоков ===
         self.block_textures = []
         for i in range(7):
@@ -84,10 +89,10 @@ class TetrisGame(arcade.Window):
 
         if self.state == "menu":
             # === Отрисовка стартового окна ===
-            self.start_button.draw()
+            self.buttons.draw()
             arcade.draw_text(
                 "TETRIS",
-                SCREEN_WIDTH // 2,
+                SCREEN_WIDTH // 2 + 25,
                 SCREEN_HEIGHT // 2 + 80,
                 arcade.color.WHITE,
                 24,
